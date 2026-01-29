@@ -1,55 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin Panel - Victim Camera</title>
+    <title>Admin Panel</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+            background: #f9f9f9;
         }
-        #admin-panel {
-            border: 1px solid #ccc;
-            padding: 20px;
-            border-radius: 10px;
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .photo-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
         }
         .photo-item {
-            margin: 10px;
-            display: inline-block;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             text-align: center;
+            min-width: 150px;
         }
         .photo-item img {
-            width: 150px;
+            width: 100%;
             height: 150px;
             object-fit: cover;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            border-radius: 4px;
         }
-        .admin-status {
+        .photo-item p {
+            margin: 10px 0 0 0;
+            font-size: 12px;
+            color: #666;
+        }
+        .status-indicator {
             color: green;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
-        .victim-info {
-            background: #f0f8ff;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .admin-controls {
-            background: #e8f4f8;
+        .control-panel {
+            background: #e9ecef;
             padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
         button {
             padding: 10px 15px;
-            margin: 5px;
             background: #007bff;
             color: white;
             border: none;
-            border-radius: 3px;
+            border-radius: 4px;
             cursor: pointer;
+            margin-right: 10px;
         }
         button:hover {
             background: #0056b3;
@@ -58,161 +67,124 @@
             background: #d4edda;
             color: #155724;
             padding: 10px;
-            border-radius: 3px;
+            border-radius: 4px;
             margin: 10px 0;
-        }
-        .no-photos {
-            text-align: center;
-            color: #666;
-            font-style: italic;
+            border: 1px solid #c3e6cb;
         }
     </style>
 </head>
 <body>
-    <h1>Admin Panel - Victim Photos</h1>
+    <div class="container">
+        <h1>Admin Panel - Victim Photos</h1>
+        <div class="status-indicator">Connection Status: Connected ✓</div>
 
-    <div class="admin-controls">
-        <h3>Admin Controls</h3>
-        <button onclick="triggerPhotoCapture()">Trigger Photo Capture</button>
-        <button onclick="refreshPhotos()">Refresh Photos</button>
-    </div>
+        <div class="control-panel">
+            <button onclick="triggerPhotoCapture()">Trigger Photo Capture</button>
+            <button onclick="refreshPhotos()">Refresh Photos</button>
+        </div>
 
-    <div class="victim-info">
-        <h3>Victim Status</h3>
-        <p>Camera: <span id="victim-camera-status">Active</span></p>
-        <p>Last Photo: <span id="last-photo-time">-</span></p>
-    </div>
+        <div id="notification-area"></div>
 
-    <div id="notification-area"></div>
-
-    <h3>Victim Photos</h3>
-    <div id="admin-photos">
-        <div class="no-photos">No photos received yet</div>
+        <h2>Received Photos</h2>
+        <div id="photo-container" class="photo-grid">
+            <div class="photo-item">
+                <div class="no-photos">No photos received yet</div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Function to trigger photo capture from admin side
-        function triggerPhotoCapture() {
-            // Show notification
+        let photoCount = 0;
+
+        // Function to show notification
+        function showNotification(message) {
             const notificationArea = document.getElementById('notification-area');
-            const timestamp = new Date().toLocaleTimeString();
-            notificationArea.innerHTML = `
-                <div class="notification">
-                    Admin triggered photo capture at ${timestamp}
-                    <br><small>Victim will take photo in background</small>
-                </div>
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            notificationArea.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Function to trigger photo capture
+        function triggerPhotoCapture() {
+            showNotification('Photo capture triggered by admin');
+
+            // Create a new photo (simulating victim capture)
+            createPhoto();
+        }
+
+        // Function to create a photo
+        function createPhoto() {
+            photoCount++;
+
+            // Create a proper photo with victim info
+            const canvas = document.createElement('canvas');
+            canvas.width = 150;
+            canvas.height = 150;
+            const ctx = canvas.getContext('2d');
+
+            // Draw a proper victim photo (blue background with name and number)
+            ctx.fillStyle = '#4a90e2';
+            ctx.fillRect(0, 0, 150, 150);
+
+            // Draw victim name
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Victim Photo', 75, 75);
+
+            // Draw photo number
+            ctx.font = '14px Arial';
+            ctx.fillText('Photo #' + photoCount, 75, 95);
+
+            // Convert to data URL
+            const imageData = canvas.toDataURL('image/jpeg');
+
+            // Add to display
+            addPhotoToDisplay(imageData);
+
+            showNotification('New photo received - Photo #' + photoCount);
+        }
+
+        // Function to add photo to display
+        function addPhotoToDisplay(imageData) {
+            const photoContainer = document.getElementById('photo-container');
+
+            // Remove "No photos" message if it exists
+            const noPhotos = photoContainer.querySelector('.no-photos');
+            if (noPhotos) {
+                photoContainer.innerHTML = '';
+            }
+
+            // Create new photo element
+            const photoDiv = document.createElement('div');
+            photoDiv.className = 'photo-item';
+            photoDiv.innerHTML = `
+                <img src="${imageData}" alt="Victim Photo">
+                <p>Photo #${photoCount} - ${new Date().toLocaleTimeString()}</p>
             `;
 
-            // Clear notification after 3 seconds
-            setTimeout(() => {
-                notificationArea.innerHTML = '';
-            }, 3000);
-
-            // Simulate receiving photo after a delay
-            setTimeout(() => {
-                // Create demo photo to show in admin panel
-                const adminPhotos = document.getElementById('admin-photos');
-                const photoDiv = document.createElement('div');
-                photoDiv.className = 'photo-item';
-
-                // Create a proper image (not smiley face)
-                const canvas = document.createElement('canvas');
-                canvas.width = 150;
-                canvas.height = 150;
-                const ctx = canvas.getContext('2d');
-
-                // Draw a proper victim photo (blue background with name)
-                ctx.fillStyle = '#4a90e2';
-                ctx.fillRect(0, 0, 150, 150);
-
-                // Draw victim name
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('Victim Photo', 75, 75);
-
-                // Draw timestamp
-                ctx.font = '12px Arial';
-                ctx.fillText(timestamp, 75, 95);
-
-                // Convert to data URL
-                const imageData = canvas.toDataURL('image/jpeg');
-
-                photoDiv.innerHTML = `
-                    <img src="${imageData}" alt="Victim Photo">
-                    <p>From Victim - ${timestamp}</p>
-                `;
-
-                // Remove "No photos" message if it exists
-                const noPhotos = adminPhotos.querySelector('.no-photos');
-                if (noPhotos) {
-                    adminPhotos.removeChild(noPhotos);
-                }
-
-                // Add new photo
-                adminPhotos.insertBefore(photoDiv, adminPhotos.firstChild);
-
-                // Update last photo time
-                document.getElementById('last-photo-time').textContent = timestamp;
-
-            }, 2000);
+            // Add to beginning of container
+            photoContainer.insertBefore(photoDiv, photoContainer.firstChild);
         }
 
         // Function to refresh photos
         function refreshPhotos() {
-            const notificationArea = document.getElementById('notification-area');
-            const timestamp = new Date().toLocaleTimeString();
-            notificationArea.innerHTML = `
-                <div class="notification">
-                    Photos refreshed at ${timestamp}
-                </div>
-            `;
-
-            setTimeout(() => {
-                notificationArea.innerHTML = '';
-            }, 2000);
+            showNotification('Photos refreshed');
         }
 
         // Initialize with a demo photo
-        window.addEventListener('load', () => {
+        window.addEventListener('load', function() {
             // Create initial demo photo
             setTimeout(() => {
-                const adminPhotos = document.getElementById('admin-photos');
-                const photoDiv = document.createElement('div');
-                photoDiv.className = 'photo-item';
-
-                // Create a proper image (not smiley face)
-                const canvas = document.createElement('canvas');
-                canvas.width = 150;
-                canvas.height = 150;
-                const ctx = canvas.getContext('2d');
-
-                // Draw a proper victim photo (blue background with name)
-                ctx.fillStyle = '#4a90e2';
-                ctx.fillRect(0, 0, 150, 150);
-
-                // Draw victim name
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('Victim Photo', 75, 75);
-
-                // Draw timestamp
-                ctx.font = '12px Arial';
-                ctx.fillText('Initial Photo', 75, 95);
-
-                // Convert to data URL
-                const imageData = canvas.toDataURL('image/jpeg');
-
-                photoDiv.innerHTML = `
-                    <img src="${imageData}" alt="Victim Photo">
-                    <p>From Victim - Initial Photo</p>
-                `;
-
-                adminPhotos.innerHTML = '';
-                adminPhotos.appendChild(photoDiv);
+                createPhoto();
             }, 1000);
         });
     </script>
 </body>
 </html>
+
