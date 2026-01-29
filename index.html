@@ -13,11 +13,12 @@
         }
         #victim-camera {
             width: 100%;
-            max-width: 500px;
-            border: 2px solid #ccc;
-            border-radius: 10px;
+            max-width: 400px;
+            height: 300px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
-        #take-photo {
+        #take-photo-btn {
             margin: 10px;
             padding: 10px 20px;
             background: #007bff;
@@ -26,11 +27,12 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        #take-photo:hover {
+        #take-photo-btn:hover {
             background: #0056b3;
         }
         #photos-container {
             margin-top: 20px;
+            text-align: center;
         }
         .photo-item {
             margin: 10px;
@@ -46,6 +48,13 @@
         .status-indicator {
             color: green;
             font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .admin-control {
+            background: #f0f8ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
         }
     </style>
 </head>
@@ -56,7 +65,7 @@
     <div id="camera-container">
         <video id="victim-camera" autoplay muted></video>
         <br>
-        <button id="take-photo">Take Photo</button>
+        <button id="take-photo-btn">Take Photo</button>
     </div>
 
     <div id="photos-container">
@@ -80,7 +89,7 @@
             });
 
         // Take photo function
-        document.getElementById('take-photo').addEventListener('click', () => {
+        document.getElementById('take-photo-btn').addEventListener('click', () => {
             try {
                 // Set canvas dimensions to match video
                 canvas.width = video.videoWidth;
@@ -104,7 +113,7 @@
                 // Add to container
                 photosContainer.appendChild(photoDiv);
 
-                // Send to admin panel (simulated)
+                // Send to admin panel
                 sendPhotoToAdmin(imageData);
 
             } catch (error) {
@@ -112,9 +121,9 @@
             }
         });
 
-        // Simulate sending photo to admin (in real app, use WebSocket or AJAX)
+        // Send photo to admin panel
         function sendPhotoToAdmin(imageData) {
-            // This would be your actual API call to send to admin
+            // Simulate sending to admin (in real app, use WebSocket or AJAX)
             console.log('Photo sent to admin panel');
 
             // For demo purposes, we'll also show it in admin panel
