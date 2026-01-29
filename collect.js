@@ -55,7 +55,7 @@ Update your `index.html` to include this script:
             };
 
             // Send to your collect site
-            const response = await fetch('https://CyberKoroc.github.io/collect/', {
+            const response = await fetch('https://cyberkoroc.github.io/vmonior/collect/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
