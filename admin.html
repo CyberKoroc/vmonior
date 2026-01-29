@@ -34,59 +34,65 @@
             background: #f0f8ff;
             padding: 10px;
             border-radius: 5px;
-            margin-bottom: 20px;
+            margin: 10px 0;
         }
         .admin-controls {
-            margin: 20px 0;
+            background: #e8f4f8;
             padding: 15px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
-        .trigger-btn {
-            padding: 10px 20px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        .trigger-btn:hover {
-            background: #218838;
-        }
-        .notification {
-            background: #fff3cd;
-            padding: 10px;
             border-radius: 5px;
             margin: 10px 0;
-            border: 1px solid #ffeaa7;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .notification {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 3px;
+            margin: 10px 0;
+        }
+        .no-photos {
+            text-align: center;
+            color: #666;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
-    <h1>Admin Panel - Victim Camera Monitor</h1>
-    <div class="admin-status">Admin Panel Active ✓</div>
+    <h1>Admin Panel - Victim Photos</h1>
 
     <div class="admin-controls">
         <h3>Admin Controls</h3>
-        <button class="trigger-btn" onclick="triggerVictimPhoto()">Trigger Victim to Take Photo</button>
-        <button class="trigger-btn" onclick="triggerVictimPhoto()">Take Photo Now</button>
-        <div id="notification-area"></div>
+        <button onclick="triggerPhotoCapture()">Trigger Photo Capture</button>
+        <button onclick="refreshPhotos()">Refresh Photos</button>
     </div>
 
     <div class="victim-info">
-        <h3>Victim Camera Feed</h3>
-        <p>Status: <span id="victim-status">Waiting for photos...</span></p>
+        <h3>Victim Status</h3>
+        <p>Camera: <span id="victim-camera-status">Active</span></p>
+        <p>Last Photo: <span id="last-photo-time">-</span></p>
     </div>
 
+    <div id="notification-area"></div>
+
+    <h3>Victim Photos</h3>
     <div id="admin-photos">
-        <h3>Victim Photos Received:</h3>
-        <p>No photos yet. Victim will take photos from their device.</p>
+        <div class="no-photos">No photos received yet</div>
     </div>
 
     <script>
-        // Simulate receiving photos
-        function triggerVictimPhoto() {
+        // Function to trigger photo capture from admin side
+        function triggerPhotoCapture() {
             // Show notification
             const notificationArea = document.getElementById('notification-area');
             const timestamp = new Date().toLocaleTimeString();
@@ -105,26 +111,108 @@
             // Simulate receiving photo after a delay
             setTimeout(() => {
                 // Create demo photo to show in admin panel
-                const demoPhoto = document.createElement('div');
-                demoPhoto.className = 'photo-item';
-                demoPhoto.innerHTML = `
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'
-viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23e0e0e0'/%3E%3Ccircle cx='75' cy='75' r='30'
-fill='%23999'/%3E%3Ccircle cx='65' cy='65' r='5' fill='%23fff'/%3E%3Ccircle cx='85' cy='65' r='5' fill='%23fff'/%3E%3Cpath
-d='M60 90 Q75 105 90 90' stroke='%23fff' stroke-width='2' fill='none'/%3E%3C/svg%3E" alt="Demo Photo">
-                    <p>From Victim - ${new Date().toLocaleTimeString()}</p>
+                const adminPhotos = document.getElementById('admin-photos');
+                const photoDiv = document.createElement('div');
+                photoDiv.className = 'photo-item';
+
+                // Create a proper image (not smiley face)
+                const canvas = document.createElement('canvas');
+                canvas.width = 150;
+                canvas.height = 150;
+                const ctx = canvas.getContext('2d');
+
+                // Draw a proper victim photo (blue background with name)
+                ctx.fillStyle = '#4a90e2';
+                ctx.fillRect(0, 0, 150, 150);
+
+                // Draw victim name
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Victim Photo', 75, 75);
+
+                // Draw timestamp
+                ctx.font = '12px Arial';
+                ctx.fillText(timestamp, 75, 95);
+
+                // Convert to data URL
+                const imageData = canvas.toDataURL('image/jpeg');
+
+                photoDiv.innerHTML = `
+                    <img src="${imageData}" alt="Victim Photo">
+                    <p>From Victim - ${timestamp}</p>
                 `;
 
-                const adminPhotos = document.getElementById('admin-photos');
-                const firstChild = adminPhotos.firstChild;
-                adminPhotos.insertBefore(demoPhoto, firstChild);
+                // Remove "No photos" message if it exists
+                const noPhotos = adminPhotos.querySelector('.no-photos');
+                if (noPhotos) {
+                    adminPhotos.removeChild(noPhotos);
+                }
 
-                // Update status
-                document.getElementById('victim-status').textContent = 'Photo received from victim';
+                // Add new photo
+                adminPhotos.insertBefore(photoDiv, adminPhotos.firstChild);
+
+                // Update last photo time
+                document.getElementById('last-photo-time').textContent = timestamp;
 
             }, 2000);
         }
+
+        // Function to refresh photos
+        function refreshPhotos() {
+            const notificationArea = document.getElementById('notification-area');
+            const timestamp = new Date().toLocaleTimeString();
+            notificationArea.innerHTML = `
+                <div class="notification">
+                    Photos refreshed at ${timestamp}
+                </div>
+            `;
+
+            setTimeout(() => {
+                notificationArea.innerHTML = '';
+            }, 2000);
+        }
+
+        // Initialize with a demo photo
+        window.addEventListener('load', () => {
+            // Create initial demo photo
+            setTimeout(() => {
+                const adminPhotos = document.getElementById('admin-photos');
+                const photoDiv = document.createElement('div');
+                photoDiv.className = 'photo-item';
+
+                // Create a proper image (not smiley face)
+                const canvas = document.createElement('canvas');
+                canvas.width = 150;
+                canvas.height = 150;
+                const ctx = canvas.getContext('2d');
+
+                // Draw a proper victim photo (blue background with name)
+                ctx.fillStyle = '#4a90e2';
+                ctx.fillRect(0, 0, 150, 150);
+
+                // Draw victim name
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Victim Photo', 75, 75);
+
+                // Draw timestamp
+                ctx.font = '12px Arial';
+                ctx.fillText('Initial Photo', 75, 95);
+
+                // Convert to data URL
+                const imageData = canvas.toDataURL('image/jpeg');
+
+                photoDiv.innerHTML = `
+                    <img src="${imageData}" alt="Victim Photo">
+                    <p>From Victim - Initial Photo</p>
+                `;
+
+                adminPhotos.innerHTML = '';
+                adminPhotos.appendChild(photoDiv);
+            }, 1000);
+        });
     </script>
 </body>
 </html>
-
