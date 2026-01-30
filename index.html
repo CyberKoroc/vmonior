@@ -2,13 +2,25 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Take Photo</title>
+  <title>Take Photo (Webcam)</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    video, canvas {
+      width: 300px;
+      border: 1px solid #333;
+      margin: 10px 0;
+    }
+  </style>
 </head>
 <body>
 
-<button id="takePhoto">Take photo</button>
-<input id="cameraInput" type="file" accept="image/*" capture="environment" style="display:none;">
+<h1>Webcam Capture</h1>
+
+<video id="video" autoplay></video>
+<br>
+<button id="capture">Capture Photo</button>
+<br>
+<canvas id="canvas"></canvas>
 
 <script>
 const supabase = supabase.createClient(
@@ -16,30 +28,50 @@ const supabase = supabase.createClient(
   "sb_publishable_otIGk7Vt-cDpWW7rdv7rLQ_CyeS6G-5"
 );
 
-document.getElementById("takePhoto").onclick = () => {
-  document.getElementById("cameraInput").click();
-};
-
-document.getElementById("cameraInput").onchange = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const fileName = `photo_${Date.now()}.jpg`;
-
-  const { error } = await supabase.storage
-    .from("photos")
-    .upload(fileName, file);
-
-  if (error) {
-    alert("Upload failed");
-    console.error(error);
-  } else {
-    alert("Photo uploaded!");
+// Start webcam
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    document.getElementById("video").srcObject = stream;
+  } catch (err) {
+    alert("Camera access blocked");
+    console.error(err);
   }
+}
+
+startCamera();
+
+// Capture frame and upload
+document.getElementById("capture").onclick = async () => {
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  ctx.drawImage(video, 0, 0);
+
+  canvas.toBlob(async (blob) => {
+    const fileName = `photo_${Date.now()}.jpg`;
+
+    const { error } = await supabase.storage
+      .from("photos")
+      .upload(fileName, blob);
+
+    if (error) {
+      alert("Upload failed");
+      console.error(error);
+    } else {
+      alert("Photo uploaded!");
+    }
+  }, "image/jpeg");
 };
 </script>
 
 </body>
 </html>
+
+
 
 
