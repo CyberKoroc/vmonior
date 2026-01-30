@@ -1,71 +1,15 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>Webcam Capture</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    video, canvas {
-      width: 320px;
-      height: auto;
-      border: 1px solid #333;
-      margin: 10px 0;
-    }
-  </style>
-</head>
 <body>
-
-<h1>Webcam Capture</h1>
-<video id="video" autoplay playsinline></video>
-<br>
-<button id="capture">Capture Photo</button>
-<br>
-<canvas id="canvas" style="display:none;"></canvas>
-
+<video id="v" autoplay playsinline style="width:300px;"></video>
 <script>
-document.addEventListener("DOMContentLoaded", async () => {
-  const video = document.getElementById("video");
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d");
-
-  const supabase = supabase.createClient(
-    "https://oqxutgtjddliuvjhkznw.supabase.co",
-    "sb_publishable_otIGk7Vt-cDpWW7rdv7rLQ_CyeS6G-5"
-  );
-
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    video.srcObject = stream;
-  } catch (err) {
-    alert("Camera access blocked");
-    console.error(err);
-  }
-
-  document.getElementById("capture").onclick = async () => {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
-
-    canvas.toBlob(async (blob) => {
-      const fileName = `photo_${Date.now()}.jpg`;
-
-      const { error } = await supabase.storage
-        .from("photos")
-        .upload(fileName, blob);
-
-      if (error) {
-        alert("Upload failed");
-        console.error(error);
-      } else {
-        alert("Photo uploaded!");
-      }
-    }, "image/jpeg");
-  };
-});
+navigator.mediaDevices.getUserMedia({video:true})
+  .then(stream => v.srcObject = stream)
+  .catch(err => console.error(err));
 </script>
-
 </body>
 </html>
+
 
 
 
