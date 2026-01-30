@@ -11,13 +11,13 @@
 <div id="gallery"></div>
 
 <script>
-const supabase = supabase.createClient(
+const sb = supabase.createClient(
   "https://oqxutgtjddliuvjhkznw.supabase.co",
   "sb_publishable_otIGk7Vt-cDpWW7rdv7rLQ_CyeS6G-5"
 );
 
 async function loadPhotos() {
-  const { data, error } = await supabase.storage
+  const { data, error } = await sb.storage
     .from("photos")
     .list("", { limit: 100 });
 
@@ -29,14 +29,18 @@ async function loadPhotos() {
   const gallery = document.getElementById("gallery");
   gallery.innerHTML = "";
 
-  data.forEach(file => {
-    const url = `https://oqxutgtjddliuvjhkznw.supabase.co/storage/v1/object/public/photos/${file.name}`;
+  for (const file of data) {
+    const { data: urlData } = sb.storage
+      .from("photos")
+      .getPublicUrl(file.name);
+
     const img = document.createElement("img");
-    img.src = url;
+    img.src = urlData.publicUrl;
     img.style.width = "200px";
     img.style.margin = "10px";
+
     gallery.appendChild(img);
-  });
+  }
 }
 
 loadPhotos();
@@ -44,4 +48,5 @@ loadPhotos();
 
 </body>
 </html>
+
 
